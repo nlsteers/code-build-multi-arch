@@ -1,13 +1,13 @@
-const http = require('http');
+const express = require('express')
+const app = express()
+const port = 3000
 
-const port = 3000;
+app.get('/', (req, res) => {
+  res.setHeader('content-type', 'text/plain')
+  res.setHeader('X-Arch', `${process.arch}`)
+  res.send(`This processor architecture is ${process.arch}`)
+})
 
-const server = http.createServer((req, res) => {
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end(`200 - this processor architecture is ${process.arch}`);
-});
-
-server.listen(port, () => {
-  console.log(`Server running on processor architecture ${process.arch}`);
-});
+app.listen(port, () => {
+  console.log(`server running on processor architecture ${process.arch}, port number ${port}`)
+})
