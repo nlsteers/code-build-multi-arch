@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/nlsteers/code-build-multi-arch#readme",
   "dependencies": {
+    "@aws-sdk/client-codebuild": "^3.429.0",
     "express": "^4.18.1"
   }
 }

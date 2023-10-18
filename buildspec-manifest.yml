@@ -1,4 +1,9 @@
 version: 0.2
+
+# env:
+#   parameter-store:
+#      DOCKERHUB_USERNAME: "/pay-cd/concourse/pipelines/main/docker-username"
+#      DOCKERHUB_PASSWORD: "/pay-cd/concourse/pipelines/main/docker-password"
 phases:
   install:
     commands:
@@ -6,32 +11,21 @@ phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      # - echo Logging in to Docker Hub...
+      # - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
   build:
     commands:
       - echo Build started on `date`
-      - echo Building the Docker manifest...
-      - export DOCKER_CLI_EXPERIMENTAL=enabled
-      - >-
-        docker manifest create
-        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
-        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest-arm64v8
-        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest-amd64
-      - >-
-        docker manifest annotate --arch arm64
-        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
-        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest-arm64v8
-      - >-
-        docker manifest annotate --arch amd64
-        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
-        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest-amd64
+      - echo Building manifest...
+      - >- 
+        docker buildx imagetools create -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG 
+        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG-arm64v8 
+        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG-amd64
+      # - >-
+      #   docker buildx imagetools create -t governmentdigitalservice/$IMAGE_REPO_NAME:$IMAGE_TAG
+      #   governmentdigitalservice/$IMAGE_REPO_NAME:$IMAGE_TAG-arm64v8
+      #   governmentdigitalservice/$IMAGE_REPO_NAME:$IMAGE_TAG-amd64
   post_build:
     commands:
       - echo Build completed on `date`
-      - echo Pushing the Docker image...
-      - >-
-        docker manifest push
-        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
-      - >-
-        docker manifest inspect
-        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
